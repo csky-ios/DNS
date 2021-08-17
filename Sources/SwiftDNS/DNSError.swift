@@ -1,8 +1,8 @@
 //
-//  Extension.swift
+//  DNSError.swift
 //  SwiftDNS
 //
-//  Copyright (c) 2020 git <vh7157@gmail.com>
+//  Copyright © 2021 Charles Augustine.
 //
 //  Permission is hereby granted, free of charge, to any person obtaining a copy
 //  of this software and associated documentation files (the "Software"), to deal
@@ -24,14 +24,8 @@
 
 import Foundation
 
-extension UInt16 {
-    func toUInt8() -> [UInt8] {
-        return [UInt8(self >> 8), UInt8(self & 0xff)]
-    }
-}
-
-extension Bool {
-    func toUInt8() -> UInt8 {
-        return self ? 0x01 : 0x00
-    }
+public enum DNSServiceError: Error {
+	case connectionNotReady
+	case responseNotComplete
+	case unknownError
 }

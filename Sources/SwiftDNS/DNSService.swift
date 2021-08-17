@@ -1,26 +1,36 @@
 //
-//  DNS.swift
+//  DNSService.swift
 //  SwiftDNS
 //
-//  Created by Vincent Huang on 2020/6/20.
-//  Copyright © 2020 Vincent Huang. All rights reserved.
+//  Copyright (c) 2020 git <vh7157@gmail.com>
 //
+//  Permission is hereby granted, free of charge, to any person obtaining a copy
+//  of this software and associated documentation files (the "Software"), to deal
+//  in the Software without restriction, including without limitation the rights
+//  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+//  copies of the Software, and to permit persons to whom the Software is
+//  furnished to do so, subject to the following conditions:
+//
+//  The above copyright notice and this permission notice shall be included in
+//  all copies or substantial portions of the Software.
+//
+//  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+//  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+//  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+//  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+//  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+//  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+//  THE SOFTWARE.
 
 import Combine
 import Foundation
 import Network
 
-enum DNSServiceError: Error {
-    case connectionNotReady
-    case responseNotComplete
-	case unknownError
-}
-
 // https://developer.apple.com/documentation/network
 @available(macOS 10.15, *)
 @available(iOS 12, *)
-public class DNSService {
-    public static func query(host: NWEndpoint.Host = "8.8.8.8", port: NWEndpoint.Port = 53, domain: String, type: DNSType = .A, queue: DispatchQueue, completion: @escaping (DNSRR?, Error?) -> Void) {
+public class DNSService: DNSQuerying {
+    public func query(host: NWEndpoint.Host = "8.8.8.8", port: NWEndpoint.Port = 53, domain: String, type: DNSType = .A, queue: DispatchQueue, completion: @escaping (DNSRR?, Error?) -> Void) {
         let connection = NWConnection(host: host, port: port, using: .udp)
         
         connection.stateUpdateHandler = { newState in
@@ -29,11 +39,11 @@ public class DNSService {
                 let q: DNSQuestion = DNSQuestion(Domain: domain, Typ: type.rawValue, Class: 0x1)
                 let query: DNSRR = DNSRR(ID: 0xAAAA, RD: true, Questions: [q])
                 connection.send(content: query.serialize(), completion: NWConnection.SendCompletion.contentProcessed { error in
-                    if error != nil {
-                        connection.stateUpdateHandler = nil
-                        connection.cancel()
-                        completion(nil, error)
-                    }
+					if let error = error {
+						connection.stateUpdateHandler = nil
+						connection.cancel()
+						completion(nil, error)
+					}
                 })
                 
                 connection.receiveMessage { (data, context, isComplete, error) in
@@ -73,9 +83,9 @@ public class DNSService {
     }
 
 	@available(iOS 13, *)
-	public static func query(host: NWEndpoint.Host = "8.8.8.8", port: NWEndpoint.Port = 53, domain: String, type: DNSType = .A, queue: DispatchQueue) -> AnyPublisher<DNSRR, Error> {
+	public func query(host: NWEndpoint.Host = "8.8.8.8", port: NWEndpoint.Port = 53, domain: String, type: DNSType = .A, queue: DispatchQueue) -> AnyPublisher<DNSRR, Error> {
 		return Future<DNSRR, Error> { promise in
-			query(host: host, port: port, domain: domain, type: type, queue: queue) { dnsrr, error in
+			self.query(host: host, port: port, domain: domain, type: type, queue: queue) { dnsrr, error in
 				switch (dnsrr, error) {
 				case (let dnsrr?, _):
 					promise(.success(dnsrr))
@@ -86,5 +96,9 @@ public class DNSService {
 				}
 			}
 		}.eraseToAnyPublisher()
+	}
+
+	public init() {
+		// Intentionally left blank
 	}
 }
