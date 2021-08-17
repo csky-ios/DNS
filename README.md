@@ -30,7 +30,8 @@ DNSService.query(domain: "goat.disco.goateng.com", type: .TXT, queue: .global(),
         
 ```
 Use Combine instead of completion handlers
-```DNSService.query(domain: "vincent178.site", queue: .global()).sink { completion in
+```swift
+DNSService.query(domain: "vincent178.site", queue: .global()).sink { completion in
 	print("DNS query completed")
 } receiveValue: { rr in
 	print("DNS query returned values \(rr.Answers.map { $0.RData })")
