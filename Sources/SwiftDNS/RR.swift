@@ -146,7 +146,7 @@ public struct DNSRR {
                 }
                 rdata = txts[0]
             } else {
-                print("TYPE \(typ) DOES NOT SUPPORT YET")
+//                print("TYPE \(typ) DOES NOT SUPPORT YET")
                 break
             }
             

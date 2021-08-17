@@ -67,18 +67,18 @@ public class DNSService: DNSQuerying {
                     connection.cancel()
                     completion(rr, nil)
                 }
-                
-            case .cancelled:
-                print("cancelled")
-            case .setup:
-                print("setup")
-            case .preparing:
-                print("preparing")
-            default:
-                print("waiting")
+			case .cancelled:
+				connection.stateUpdateHandler = nil
+				connection.cancel()
+				completion(nil, DNSServiceError.connectionCancelled)
+			case .failed(let error):
+				connection.stateUpdateHandler = nil
+				connection.cancel()
+				completion(nil, error)
+			default:
+				break // Nothing to do
             }
         }
-        
         connection.start(queue: queue)
     }
 

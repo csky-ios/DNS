@@ -26,6 +26,7 @@ import Foundation
 
 public enum DNSServiceError: Error {
 	case connectionNotReady
+	case connectionCancelled
 	case responseNotComplete
 	case unknownError
 }
