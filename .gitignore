@@ -1,1 +1,7 @@
-DNS.xcodeproj/xcuserdata/
+xcuserdata
+*.xccheckout
+.DS_Store*
+enthumbs.db
+Icon\?
+Thumbs.db
+.swiftpm

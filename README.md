@@ -3,9 +3,11 @@
 
 ## Installation
 
-### CocoaPods
+### Swift Package Manager
 ```
-pod 'SwiftDNS', '~> 0.3.0'
+dependencies: [
+	.package(url: "https://github.com/csky-ios/DNS.git", .upToNextMajor(from: "1.0.0"))
+]
 ```
 
 ## Quick Start
@@ -26,4 +28,11 @@ DNSService.query(domain: "goat.disco.goateng.com", type: .TXT, queue: .global(),
   print(rr!.Answers.map { $0.RData })
 })
         
+```
+Use Combine instead of completion handlers
+```DNSService.query(domain: "vincent178.site", queue: .global()).sink { completion in
+	print("DNS query completed")
+} receiveValue: { rr in
+	print("DNS query returned values \(rr.Answers.map { $0.RData })")
+}
 ```

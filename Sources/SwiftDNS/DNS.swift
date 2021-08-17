@@ -1,25 +1,25 @@
 //
 //  DNS.swift
-//  DNS
+//  SwiftDNS
 //
 //  Created by Vincent Huang on 2020/6/20.
 //  Copyright © 2020 Vincent Huang. All rights reserved.
 //
 
+import Combine
 import Foundation
 import Network
 
 enum DNSServiceError: Error {
     case connectionNotReady
     case responseNotComplete
+	case unknownError
 }
 
 // https://developer.apple.com/documentation/network
-@available(macOS 10.14, *)
+@available(macOS 10.15, *)
 @available(iOS 12, *)
 public class DNSService {
-    
-    
     public static func query(host: NWEndpoint.Host = "8.8.8.8", port: NWEndpoint.Port = 53, domain: String, type: DNSType = .A, queue: DispatchQueue, completion: @escaping (DNSRR?, Error?) -> Void) {
         let connection = NWConnection(host: host, port: port, using: .udp)
         
@@ -37,21 +37,21 @@ public class DNSService {
                 })
                 
                 connection.receiveMessage { (data, context, isComplete, error) in
-                    if error != nil {
-                        connection.stateUpdateHandler = nil
-                        connection.cancel()
-                        completion(nil, error)
-                        return
-                    }
-                    
-                    if !isComplete {
-                        connection.stateUpdateHandler = nil
-                        connection.cancel()
-                        // TODO: handle not complete response
-                        completion(nil, DNSServiceError.responseNotComplete)
-                        return
-                    }
-                    
+					guard error == nil else {
+						connection.stateUpdateHandler = nil
+						connection.cancel()
+						completion(nil, error)
+						return
+					}
+
+					guard isComplete else {
+						connection.stateUpdateHandler = nil
+						connection.cancel()
+						// TODO: handle not complete response
+						completion(nil, DNSServiceError.responseNotComplete)
+						return
+					}
+
                     let rr = DNSRR.deserialize(data: [UInt8](data!))
                     connection.stateUpdateHandler = nil
                     connection.cancel()
@@ -71,4 +71,20 @@ public class DNSService {
         
         connection.start(queue: queue)
     }
+
+	@available(iOS 13, *)
+	public static func query(host: NWEndpoint.Host = "8.8.8.8", port: NWEndpoint.Port = 53, domain: String, type: DNSType = .A, queue: DispatchQueue) -> AnyPublisher<DNSRR, Error> {
+		return Future<DNSRR, Error> { promise in
+			query(host: host, port: port, domain: domain, type: type, queue: queue) { dnsrr, error in
+				switch (dnsrr, error) {
+				case (let dnsrr?, _):
+					promise(.success(dnsrr))
+				case (_, let error?):
+					promise(.failure(error))
+				default:
+					promise(.failure(DNSServiceError.unknownError))
+				}
+			}
+		}.eraseToAnyPublisher()
+	}
 }
